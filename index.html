@@ -1,154 +1,66 @@
-<!doctype html>
-<html>
-  <head>
-    <link rel="stylesheet" href="css/bootstrap.min.css">
-    <link rel="stylesheet" href="css/chessboard-0.3.0.min.css" />
-    <script src="js/jquery-1.10.1.min.js"></script>
-    <script src="js/bootstrap.min.js"></script>
-    <script src="js/chess.min.js"></script>
-    <script src="js/chessboard-0.3.0.min.js"></script>
-    <title>Simple bot chess</title>
-	<style>
-	footer {
-	text-align: center;
-	padding: 10px;
-	background-color: White;
-	color: Black;
-}
-	</style>
-  </head>
-  <body>
-    <div class="row">
-      <div class="col-sm-7 col-md-6">
-        <span class="h3" id="time1">0:05:00</span>
-        <div id="board" style="width: 400px"></div>
-        <span class="h3" id="time2">0:05:00</span>
-        <hr>
-        <div id="engineStatus">...</div>
-      </div>
-      <div class="col-sm-5 col-md-6">
-        <h3>Tùy chỉnh:</h3>
-        <div id="pgn"></div>
-        <hr>
-        <form class="form-horizontal">
-          <div class="form-group">
-            <label for="timeBase" class="control-label col-xs-4 col-sm-6 col-md-4">Thời gian ván đấu (phút)</label>
-            <div class="col-xs-4 col-sm-6 col-md-4">
-              <input type="number" class="form-control" id="timeBase" value="5">
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="timeInc" class="control-label col-xs-4 col-sm-6 col-md-4">Thời gian bấm đồng hồ (giây)</label>
-            <div class="col-xs-4 col-sm-6 col-md-4">
-              <input type="number" class="form-control" id="timeInc" value="2">
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="skillLevel" class="control-label col-xs-4 col-sm-6 col-md-4">Cấp độ (0-20)</label>
-            <div class="col-xs-4 col-sm-6 col-md-4">
-              <input type="number" class="form-control" id="skillLevel" value="0">
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="color" class="control-label col-xs-4 col-sm-6 col-md-4">Bắt đầu bên </label>
-            <div class="col-xs-4 col-sm-6 col-md-4">
-              <div class="btn-group" data-toggle="buttons">
-                <label class="btn btn-primary active" id="color-white"><input type="radio" name="color">Trắng</label>
-                <label class="btn btn-primary" id="color-black"><input type="radio" name="color">Đen</label>
-              </div>
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="showScore" class="control-label col-xs-4 col-sm-6 col-md-4">Hiện điểm</label>
-            <div class="col-xs-4 col-sm-6 col-md-4">
-              <input type="checkbox" class="form-control" id="showScore" checked>
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="color" class="control-label col-xs-4 col-sm-6 col-md-4"></label>
-            <div class="col-xs-4 col-sm-6 col-md-4">
-              <button type="button" class="btn btn-primary" onclick="newGame()">Ván mới</button>
-            </div>
-          </div>
-          
-          <div class="form-group">
-            <label for="color" class="control-label col-xs-4 col-sm-6 col-md-4">Phong tốt thành</label>
-            <div class="col-xs-4 col-sm-6 col-md-4">
-              <select id=promote>
-                <option value=q selected>Hậu</option>
-                <option value=r>Xe</option>
-                <option value=b>Tịnh</option>
-                <option value=n>Mã</option>
-              </select>
-            </div>
-          </div>
-        </form>
-        <h5>Đánh giá ván</h5>
-        <pre id=evaluation></pre>
-    </div>
-    <script src="enginegame.js"></script>
-    <script>
-      var wait_for_script;
-      var newGame = function (){};
-      
-      /// We can load Stockfish.js via Web Workers or directly via a <script> tag.
-      /// Web Workers are better since they don't block the UI, but they are not always avaiable.
-      (function fix_workers()
-      {
-        var script_tag;
-        /// Does the environment support web workers?  If not, include stockfish.js directly.
-        ///NOTE: Since web workers don't work when a page is loaded from the local system, we have to fake it there too. (Take that security measures!)
-        if (!Worker || (location && location.protocol === "file:")) {
-          var script_tag  = document.createElement("script");
-          script_tag.type ="text/javascript";
-          script_tag.src  = "stockfish.asm.js";
-          script_tag.onload = init;
-          document.getElementsByTagName("head")[0].appendChild(script_tag);
-          wait_for_script = true;
-          setTimeout(function ()
-          {
-            console.warn("Loading this example from the file: protocol will load the slower asm.js engine.\nRun server.js and then load http://localhost:8080/ for the WASM engine.");
-          }, 3000);
-        }
-      }());
-      
-      function init()
-      {
-        var game = engineGame();
-    
-        newGame = function newGame() {
-            var baseTime = parseFloat($('#timeBase').val()) * 60;
-            var inc = parseFloat($('#timeInc').val());
-            var skill = parseInt($('#skillLevel').val());
-            game.reset();
-            game.setTime(baseTime, inc);
-            game.setSkillLevel(skill);
-            game.setPlayerColor($('#color-white').hasClass('active') ? 'white' : 'black');
-            game.setDisplayScore($('#showScore').is(':checked'));
-            game.start();
-        }
-        
-        game.setSkillLevel
-        
-        document.getElementById("skillLevel").addEventListener("change", function ()
-        {
-            game.setSkillLevel(parseInt(this.value, 10));
-        });
-    
-        newGame();
-      }
-      
-      /// If we load Stockfish.js via a <script> tag, we need to wait until it loads.
-      if (!wait_for_script) {
-        document.addEventListener("DOMContentLoaded", init);
-      }
-    </script>
-
-  </body>
-  <footer>
-		<p>Made with stockfish engine<br>
-		<a href="gengeekclub.github.io">Liên hệ với chúng tôi</a></p>
-		&copy; 2010<script>new Date().getFullYear()>2019&&document.write("-"+new Date().getFullYear());</script> Power by gengeek club.
-  </footer>
- 
-</html>
+<!-- saved from url=(0014)about:internet --> 
+<html> 
+  <head> 
+    <title>Simple chess</title> 
+    <script type="text/javascript" src="js/jquery-1.8.2.min.js"></script> 
+    <script type="text/javascript" src="js/jquery-ui-1.8.24.custom.min.js"></script> 
+    <script type="text/javascript" src="js/garbochess.js"></script>
+	<script type="text/javascript" src="js/boardui.js"></script>
+	<script type="text/javascript">
+	    $(document).ready(function () {
+	        g_timeout = 1000;
+	        UINewGame();
+	    });
+    </script> 
+      <style type="text/css">
+          #FenTextBox {
+              width: 400px;
+          }
+          #TimePerMove {
+              width: 50px;
+          }
+          .no-highlight {
+            -webkit-tap-highlight-color: rgba(0,0,0,0);
+          }
+          .sprite-bishop_black{ background-position: 0 0; width: 45px; height: 45px; } 
+          .sprite-bishop_white{ background-position: 0 -95px; width: 45px; height: 45px; } 
+          .sprite-king_black{ background-position: 0 -190px; width: 45px; height: 45px; } 
+          .sprite-king_white{ background-position: 0 -285px; width: 45px; height: 45px; } 
+          .sprite-knight_black{ background-position: 0 -380px; width: 45px; height: 45px; } 
+          .sprite-knight_white{ background-position: 0 -475px; width: 45px; height: 45px; } 
+          .sprite-pawn_black{ background-position: 0 -570px; width: 45px; height: 45px; } 
+          .sprite-pawn_white{ background-position: 0 -665px; width: 45px; height: 45px; } 
+          .sprite-queen_black{ background-position: 0 -760px; width: 45px; height: 45px; } 
+          .sprite-queen_white{ background-position: 0 -855px; width: 45px; height: 45px; } 
+          .sprite-rook_black{ background-position: 0 -950px; width: 45px; height: 45px; } 
+          .sprite-rook_white{ background-position: 0 -1045px; width: 45px; height: 45px; }
+      </style>
+  </head> 
+  <body> 
+    <div align="center">
+        <div>
+            <a href="javascript:UINewGame()">Ván mới</a>
+            <select onchange="javascript:UIChangeStartPlayer()">
+                <option value="white">|Bên trắng|</option>
+                <option value="black">|Bên đen|</option>
+            </select>
+            Thời gian đi: <input id="TimePerMove" value="3000" onchange="javascript:UIChangeTimePerMove()" />ms
+            <a href="javascript:UIUndoMove()">Quay lại</a>
+        </div>
+        <div style="margin-top:5px;">
+        <div id='board'></div> 
+        <span id='output'></span><br/> 
+	    <textarea cols='50' rows='6' id='PgnTextBox'></textarea><br/>
+       
+        FEN: <input id='FenTextBox' onchange="javascript:UIChangeFEN()"/>
+        </div>
+        <div>
+		
+		&copy; 2019<script>new Date().getFullYear()>2019&&document.write("-"+new Date().getFullYear());</script> Power by gengeek club & garbochess.
+		<p> </p>
+		<a href="https://www.facebook.com/lqdgengeek/">Liên hệ với chúng tôi</a>
+		
+	</div>
+     </div> 
+  </body> 
+</html> 
